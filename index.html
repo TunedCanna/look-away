@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-MRc3RLWxQ7kx7kopaJqCbt3O8GRCDOBJiLI32yxoJBE='; style-src 'sha256-bAKDIOVeW4cP479wurD0YBUNv0Pyy2oz5AT+X1NEc2I='; img-src data:; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Look Away</title>
+<meta name="description" content="A gentle 20-20-20 reminder to rest your eyes. Runs in your browser, nothing to install.">
+<link rel="icon" id="favicon" href="data:,">
+<style>
+  :root{
+    --bg:#f3f5f4; --card:#ffffff; --ink:#1b2422; --muted:#56635f; --line:#dfe5e3;
+    --accent:#2f7d6d; --accent-hover:#286b5d; --accent-ink:#ffffff; --accent-soft:#e2f0ec;
+    --warm-soft:#fbeedd; --warm-ink:#7a4a14;
+    --radius:18px; --shadow:0 1px 2px rgba(16,24,22,.05),0 8px 24px rgba(16,24,22,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#111816; --card:#18211f; --ink:#e7eeec; --muted:#9aa8a4; --line:#27322f;
+      --accent:#62b9a5; --accent-hover:#76c7b4; --accent-ink:#0b1714; --accent-soft:#1f322d;
+      --warm-soft:#3a2a17; --warm-ink:#f1c896;
+      --shadow:none;
+    }
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none !important}
+  html{color-scheme:light dark}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:720px;margin:0 auto;padding:28px 20px 48px}
+  .top{display:flex;align-items:center;gap:14px;margin-bottom:20px}
+  .top .logo{width:42px;height:42px;flex:none}
+  h1{font-size:1.4rem;margin:0;font-weight:650;letter-spacing:-.01em;line-height:1.2}
+  .sub{margin:0;color:var(--muted);font-size:.95rem}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px;margin-bottom:16px}
+  h2{font-size:1.05rem;margin:0 0 16px;font-weight:650}
+
+  .hero{display:flex;flex-direction:column;align-items:center;text-align:center;padding:32px 24px 28px}
+  .ring{position:relative;width:min(250px,68vw);aspect-ratio:1}
+  .ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+  .ring circle{fill:none;stroke-width:10}
+  .track{stroke:var(--accent-soft)}
+  .prog{stroke:var(--accent);stroke-linecap:round;stroke-dasharray:603.19;transition:stroke-dashoffset .9s linear}
+  .ring-text{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .label{color:var(--muted);font-size:.92rem}
+  .time{font-size:3.5rem;font-weight:300;font-variant-numeric:tabular-nums;line-height:1.1;letter-spacing:-.02em;margin-top:2px}
+  .msg{color:var(--muted);margin:16px 0 0;max-width:38ch}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:20px}
+  .count{margin:16px 0 0;font-size:.92rem;color:var(--accent);font-weight:600;min-height:1.4em}
+  .banner{margin:14px 0 0;padding:.55rem .95rem;border-radius:12px;background:var(--warm-soft);color:var(--warm-ink);font-size:.9rem}
+
+  .btn{font:inherit;font-weight:600;border-radius:999px;padding:.65rem 1.3rem;border:1px solid transparent;cursor:pointer;transition:background .15s,border-color .15s}
+  .btn:active{transform:translateY(1px)}
+  .btn:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 45%,transparent);outline-offset:2px}
+  .primary{background:var(--accent);color:var(--accent-ink);min-width:11.5rem}
+  .primary:hover{background:var(--accent-hover)}
+  .ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+  .ghost:hover{background:var(--accent-soft);border-color:transparent}
+  .btn.small{padding:.35rem .85rem;font-size:.86rem}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px 22px}
+  .field{display:flex;flex-direction:column;gap:7px;min-width:0}
+  .field-name{font-size:.85rem;color:var(--muted);font-weight:600}
+  .wide{grid-column:1/-1}
+  select{font:inherit;padding:.5rem .7rem;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+  .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .check{display:flex;align-items:flex-start;gap:9px;cursor:pointer}
+  .check input{width:18px;height:18px;accent-color:var(--accent);margin:3px 0 0;flex:none;cursor:pointer}
+  input[type=range]{accent-color:var(--accent);flex:1;min-width:90px;cursor:pointer}
+  .pill{font-size:.86rem;padding:.2rem .7rem;border-radius:999px;background:var(--accent-soft)}
+  .pill.warn{background:var(--warm-soft);color:var(--warm-ink)}
+  .note{color:var(--muted);font-size:.86rem}
+  .note:empty{display:none}
+
+  details.card{padding:0}
+  summary{cursor:pointer;list-style:none;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;border-radius:var(--radius)}
+  summary::-webkit-details-marker{display:none}
+  summary h2{margin:0}
+  summary::after{content:"";width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg) translateY(-2px);transition:transform .2s;margin-left:12px;flex:none}
+  details[open] summary::after{transform:rotate(-135deg)}
+  .tips{padding:0 24px 22px}
+  .tips ol,.tips ul{margin:0;padding-left:1.25rem}
+  .tips li{margin-bottom:10px}
+  .tips li:last-child{margin-bottom:0}
+  kbd{font:inherit;font-size:.86em;padding:.05rem .4rem;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;background:var(--bg);white-space:nowrap}
+  footer{text-align:center;color:var(--muted);font-size:.86rem;margin-top:26px}
+
+  .overlay{position:fixed;inset:0;z-index:10;display:grid;place-items:center;padding:24px;text-align:center;color:#eef6f3;
+    background:radial-gradient(120% 90% at 50% 35%,#24564b 0%,#13312b 55%,#0c211d 100%);outline:none}
+  .ov-inner{position:relative;display:flex;flex-direction:column;align-items:center;max-width:34rem}
+  .breath{position:absolute;top:50%;left:50%;width:min(72vmin,480px);aspect-ratio:1;border-radius:50%;pointer-events:none;
+    background:radial-gradient(circle,rgba(255,255,255,.11),rgba(255,255,255,0) 70%);transform:translate(-50%,-50%) scale(.85);animation:breathe 8s ease-in-out infinite}
+  .overlay h2{font-size:clamp(2rem,5vw,3rem);font-weight:600;margin:0 0 10px}
+  .ov-msg{font-size:1.15rem;line-height:1.5;opacity:.92;margin:0 0 6px}
+  .ov-count{font-size:clamp(5rem,16vw,9rem);font-weight:200;font-variant-numeric:tabular-nums;line-height:1.05}
+  .ov-actions{display:flex;gap:12px;margin-top:26px;flex-wrap:wrap;justify-content:center}
+  .btn.ov{background:rgba(255,255,255,.1);color:#eef6f3;border-color:rgba(255,255,255,.24)}
+  .btn.ov:hover{background:rgba(255,255,255,.18)}
+  @keyframes breathe{50%{transform:translate(-50%,-50%) scale(1.1)}}
+  @media (prefers-reduced-motion: reduce){.breath{animation:none}.prog{transition:none}}
+  @media (max-width:560px){.grid{grid-template-columns:1fr}.time{font-size:3rem}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="top">
+    <svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#2f7d6d"/><path d="M8 32c6-10 14-16 24-16s18 6 24 16c-6 10-14 16-24 16S14 42 8 32z" fill="#fff"/><circle cx="32" cy="32" r="9.5" fill="#2f7d6d"/><circle cx="35.5" cy="28.5" r="3" fill="#fff"/></svg>
+    <div>
+      <h1>Look Away</h1>
+      <p class="sub">A gentle 20-20-20 reminder for tired eyes</p>
+    </div>
+  </header>
+
+  <section class="card hero" aria-label="Timer">
+    <div class="ring">
+      <svg viewBox="0 0 220 220" aria-hidden="true">
+        <circle class="track" cx="110" cy="110" r="96"/>
+        <circle class="prog" id="prog" cx="110" cy="110" r="96"/>
+      </svg>
+      <div class="ring-text" role="timer" aria-live="off">
+        <span class="label" id="statusLabel">Ready when you are</span>
+        <span class="time" id="time">20:00</span>
+      </div>
+    </div>
+    <p class="msg" id="msg"></p>
+    <div class="actions">
+      <button type="button" id="mainBtn" class="btn primary">Start reminders</button>
+      <button type="button" id="breakNowBtn" class="btn ghost">Take a break now</button>
+    </div>
+    <p class="count" id="count"></p>
+    <p class="banner" id="soundBanner" hidden>Click anywhere on this page to switch the chime on.</p>
+    <p class="banner" id="followNote" hidden>This is also open in another window or tab. Only one of them will chime, so you can close this one.</p>
+  </section>
+
+  <section class="card" aria-labelledby="setHead">
+    <h2 id="setHead">Settings</h2>
+    <div class="grid">
+      <label class="field">
+        <span class="field-name">Remind me every</span>
+        <select id="workMin">
+          <option value="10">10 minutes</option>
+          <option value="15">15 minutes</option>
+          <option value="20">20 minutes (recommended)</option>
+          <option value="25">25 minutes</option>
+          <option value="30">30 minutes</option>
+          <option value="45">45 minutes</option>
+          <option value="60">1 hour</option>
+        </select>
+      </label>
+      <label class="field">
+        <span class="field-name">Break length</span>
+        <select id="breakSec">
+          <option value="20">20 seconds (recommended)</option>
+          <option value="30">30 seconds</option>
+          <option value="60">1 minute</option>
+        </select>
+      </label>
+      <div class="field">
+        <span class="field-name">Chime</span>
+        <div class="row">
+          <label class="check"><input type="checkbox" id="sound"><span>On</span></label>
+          <input type="range" id="volume" min="0.1" max="1" step="0.1" aria-label="Chime volume">
+          <button type="button" id="testSound" class="btn small ghost">Test</button>
+        </div>
+      </div>
+      <div class="field">
+        <span class="field-name">Pop-up notifications</span>
+        <div class="row">
+          <span id="notifState" class="pill">Checking…</span>
+          <button type="button" id="notifBtn" class="btn small ghost" hidden>Turn on</button>
+        </div>
+      </div>
+      <div class="field wide">
+        <span class="field-name">Stepping away</span>
+        <label class="check"><input type="checkbox" id="lockReset"><span>Pause while my screen is locked, and start fresh when I'm back</span></label>
+        <span class="note" id="lockNote"></span>
+      </div>
+    </div>
+  </section>
+
+  <details class="card">
+    <summary><h2>Keep it running in the background</h2></summary>
+    <div class="tips">
+      <ol>
+        <li><strong>Give it its own window.</strong> Drag this tab out of Edge so it sits in its own window, then minimise it. Or install it: in Edge select <kbd>···</kbd> &rarr; <em>Apps</em> &rarr; <em>Install this site as an app</em>. You can then pin it to the taskbar and have it start when you sign in.</li>
+        <li><strong>Stop Edge putting it to sleep.</strong> Edge <em>Settings</em> &rarr; <em>System and performance</em> &rarr; <em>Never put these sites to sleep</em> &rarr; <em>Add</em>, and paste this page's address. (The wording moves around a little between Edge versions.)</li>
+        <li><strong>Allow pop-ups.</strong> When Edge asks to show notifications, choose <em>Allow</em>. Missed it? Select the icon just left of the address, then <em>Permissions for this site</em> &rarr; <em>Notifications</em> &rarr; <em>Allow</em>. Windows <em>Do not disturb</em> hides pop-ups, but the chime and the tab title still work.</li>
+        <li><strong>Lock your screen when you leave</strong> (<kbd>Windows</kbd> + <kbd>L</kbd>). With "Pause while my screen is locked" ticked, it won't chime at an empty desk.</li>
+      </ol>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><h2>Other easy wins for tired eyes</h2></summary>
+    <div class="tips">
+      <ul>
+        <li><strong>Make text bigger instead of leaning in.</strong> <kbd>Ctrl</kbd> + <kbd>+</kbd> zooms Edge, Outlook and most Office apps. For everything at once: Windows <em>Settings</em> &rarr; <em>Accessibility</em> &rarr; <em>Text size</em>.</li>
+        <li><strong>Match brightness to the room.</strong> A screen much brighter or darker than its surroundings is tiring. Try not to sit with a bright window right behind or in front of the screen.</li>
+        <li><strong>Distance and height.</strong> Roughly an arm's length away, with the top of the screen at or just below eye level.</li>
+        <li><strong>Blink on purpose.</strong> We blink far less while staring at a screen. A few slow, full blinks during each break helps with dry, gritty eyes.</li>
+        <li><strong>Warmer light later in the day.</strong> Windows <em>Settings</em> &rarr; <em>System</em> &rarr; <em>Display</em> &rarr; <em>Night light</em>.</li>
+        <li><strong>Get them checked.</strong> If your eyes keep feeling rough, book an eye test, and ask HR whether your workplace covers it for screen users. Many employers do, and in the UK it's a legal requirement.</li>
+      </ul>
+    </div>
+  </details>
+
+  <footer>Runs entirely in your browser. Nothing is installed, and nothing you do here leaves your computer.</footer>
+</main>
+
+<div id="overlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="ovTitle" aria-describedby="ovMsg" tabindex="-1" hidden>
+  <div class="ov-inner">
+    <div class="breath" aria-hidden="true"></div>
+    <h2 id="ovTitle">Look away</h2>
+    <p class="ov-msg" id="ovMsg"></p>
+    <div class="ov-count" id="ovCount">20</div>
+    <div class="ov-actions" id="ovActions">
+      <button type="button" id="snoozeBtn" class="btn ov">Snooze 5 min</button>
+      <button type="button" id="skipBtn" class="btn ov">Skip this one</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const KEY = 'lookaway.v1';
+  const DEFAULTS = { workMin: 20, breakSec: 20, sound: true, volume: 0.6, lockReset: false };
+  const BLANK = { phase: 'stopped', nextAt: 0, total: 0, remaining: 0, breakEndsAt: 0, day: '', count: 0 };
+  const LATE_MS = 10 * 60 * 1000;   // waking up this late means the PC was asleep: start fresh, no stale break
+  const SNOOZE_MS = 5 * 60 * 1000;
+  const RING = 2 * Math.PI * 96;
+  const CALM = '#2f7d6d', WARM = '#d9822b';
+
+  const $ = (id) => document.getElementById(id);
+  const el = {
+    prog: $('prog'), time: $('time'), label: $('statusLabel'), msg: $('msg'),
+    main: $('mainBtn'), breakNow: $('breakNowBtn'), count: $('count'),
+    soundBanner: $('soundBanner'), followNote: $('followNote'),
+    workMin: $('workMin'), breakSec: $('breakSec'), sound: $('sound'), volume: $('volume'), testSound: $('testSound'),
+    notifState: $('notifState'), notifBtn: $('notifBtn'), lockReset: $('lockReset'), lockNote: $('lockNote'),
+    overlay: $('overlay'), ovTitle: $('ovTitle'), ovMsg: $('ovMsg'), ovCount: $('ovCount'), ovActions: $('ovActions'),
+    snooze: $('snoozeBtn'), skip: $('skipBtn'), favicon: $('favicon')
+  };
+
+  // ---------- state ----------
+  const settings = { ...DEFAULTS };
+  const state = { ...BLANK };
+  function loadFromStorage() {
+    let s = {};
+    try { s = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { s = {}; }
+    Object.assign(settings, DEFAULTS, s.settings);
+    Object.assign(state, BLANK, s.state);
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify({ settings, state })); } catch (e) {} }
+  loadFromStorage();
+
+  const todayStr = () => new Date().toDateString();
+  function rollDay() { const t = todayStr(); if (state.day !== t) { state.day = t; state.count = 0; save(); } }
+  const workMs = () => settings.workMin * 60000;
+
+  // ---------- icons ----------
+  function iconSvg(bg) {
+    return "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='16' fill='" + bg + "'/>" +
+      "<path d='M8 32c6-10 14-16 24-16s18 6 24 16c-6 10-14 16-24 16S14 42 8 32z' fill='#fff'/>" +
+      "<circle cx='32' cy='32' r='9.5' fill='" + bg + "'/><circle cx='35.5' cy='28.5' r='3' fill='#fff'/></svg>";
+  }
+  const iconUrl = (bg) => 'data:image/svg+xml,' + encodeURIComponent(iconSvg(bg));
+  let favColor = '';
+  function setFavicon(c) { if (c !== favColor) { favColor = c; el.favicon.href = iconUrl(c); } }
+  let notifIcon = '';
+  (function makePngIcon() {           // Windows pop-ups want a bitmap, not an SVG
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const cv = document.createElement('canvas'); cv.width = cv.height = 128;
+        cv.getContext('2d').drawImage(img, 0, 0, 128, 128);
+        notifIcon = cv.toDataURL('image/png');
+      } catch (e) {}
+    };
+    img.src = iconUrl(WARM);
+  })();
+
+  // ---------- sound ----------
+  let ctx = null;
+  function audio() {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    if (!ctx) { try { ctx = new AC(); ctx.onstatechange = render; } catch (e) { return null; } }
+    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+    return ctx;
+  }
+  function playChime(kind) {
+    const c = ctx; if (!c || c.state !== 'running') return;
+    const notes = kind === 'end' ? [783.99, 523.25] : [523.25, 659.25, 783.99];
+    const peak = 0.25 * settings.volume;
+    notes.forEach((f, i) => {
+      const t = c.currentTime + 0.03 + i * 0.22;
+      const o = c.createOscillator(), g = c.createGain();
+      o.type = 'sine'; o.frequency.setValueAtTime(f, t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(peak, t + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 1.4);
+      o.connect(g); g.connect(c.destination);
+      o.start(t); o.stop(t + 1.5);
+    });
+  }
+  function chime(kind) {
+    if (!settings.sound) return;
+    const c = audio();
+    if (c && c.state === 'running') playChime(kind);
+  }
+  function testChime() {
+    const c = audio(); if (!c) return;
+    if (c.state === 'running') playChime('start');
+    else c.resume().then(() => playChime('start')).catch(() => {});
+  }
+  ['pointerdown', 'keydown'].forEach((ev) => document.addEventListener(ev, () => { if (settings.sound) audio(); }, true));
+
+  // ---------- notifications ----------
+  let note = null;
+  const canNotify = () => 'Notification' in window;
+  function askNotify() {
+    if (canNotify() && Notification.permission === 'default') {
+      try { Notification.requestPermission().then(render, render); } catch (e) {}
+    }
+  }
+  function notify() {
+    if (!canNotify() || Notification.permission !== 'granted') return;
+    try {
+      closeNote();
+      note = new Notification('Time to rest your eyes', {
+        body: 'Look at something about 6 metres away for ' + settings.breakSec + ' seconds.',
+        tag: 'look-away', renotify: true, silent: settings.sound, icon: notifIcon || undefined
+      });
+      note.onclick = () => { window.focus(); closeNote(); };
+    } catch (e) { note = null; }
+  }
+  function closeNote() { if (note) { try { note.close(); } catch (e) {} note = null; } }
+
+  // ---------- screen lock detection (optional, Chromium IdleDetector) ----------
+  let idleAbort = null;
+  async function startLockWatch() {
+    if (!('IdleDetector' in window)) return false;
+    try {
+      if (idleAbort) idleAbort.abort();
+      const ac = new AbortController();
+      const d = new IdleDetector();
+      d.addEventListener('change', () => { if (d.screenState === 'locked') onLocked(); else onUnlocked(); });
+      await d.start({ threshold: 60000, signal: ac.signal });
+      idleAbort = ac;
+      return true;
+    } catch (e) { idleAbort = null; return false; }
+  }
+  function stopLockWatch() { if (idleAbort) { idleAbort.abort(); idleAbort = null; } }
+  async function resumeLockWatch() {
+    let ok = false;
+    try {
+      const p = await navigator.permissions.query({ name: 'idle-detection' });
+      if (p.state === 'granted') ok = await startLockWatch();
+    } catch (e) { ok = await startLockWatch(); }
+    if (!ok) {
+      settings.lockReset = false; save(); syncControls();
+      if (state.phase === 'away') startWork();
+    }
+  }
+  function onLocked() {
+    if (state.phase === 'working' || state.phase === 'break') { closeNote(); state.phase = 'away'; save(); render(); }
+  }
+  function onUnlocked() { if (state.phase === 'away') startWork(); }
+
+  // ---------- phases ----------
+  function startWork(ms) {
+    ms = ms || workMs();
+    state.phase = 'working'; state.total = ms; state.nextAt = Date.now() + ms;
+    save(); render();
+  }
+  function pause() {
+    if (state.phase !== 'working') return;
+    state.remaining = Math.max(0, state.nextAt - Date.now()); state.phase = 'paused';
+    save(); render();
+  }
+  function resume() {
+    const ms = state.remaining > 1000 ? state.remaining : workMs();
+    state.phase = 'working'; state.nextAt = Date.now() + ms;
+    if (!state.total || state.total < ms) state.total = ms;
+    save(); render();
+  }
+  function beginBreak() {
+    state.phase = 'break'; state.breakEndsAt = Date.now() + settings.breakSec * 1000;
+    save(); chime('start'); notify(); render();
+  }
+  let showingDone = false, doneTimer = 0;
+  function endBreak(completed) {
+    closeNote();
+    if (completed) { rollDay(); state.count++; chime('end'); }
+    if (completed && !document.hidden) {
+      showingDone = true; clearTimeout(doneTimer);
+      doneTimer = setTimeout(() => { showingDone = false; render(); }, 2500);
+    }
+    startWork();
+  }
+  function snooze() { closeNote(); startWork(SNOOZE_MS); }
+
+  // ---------- one tab rings, the others mirror ----------
+  let leader = !(navigator.locks && navigator.locks.request);
+  function becomeLeader() {
+    leader = true; loadFromStorage(); syncControls(); el.followNote.hidden = true;
+    if (settings.lockReset) resumeLockWatch();
+    else if (state.phase === 'away') startWork();
+    tick();
+  }
+  if (!leader) {
+    navigator.locks.request('look-away-leader', () => { becomeLeader(); return new Promise(() => {}); })
+      .catch(() => { if (!leader) becomeLeader(); });
+    setTimeout(() => { if (!leader) el.followNote.hidden = false; }, 600);
+  }
+  window.addEventListener('storage', (e) => {
+    if (e.key !== KEY) return;
+    const prev = state.phase;
+    loadFromStorage(); syncControls();
+    if (leader) {
+      if (prev === 'break' && state.phase !== 'break') closeNote();
+      if (settings.lockReset && !idleAbort) resumeLockWatch();
+      if (!settings.lockReset && idleAbort) stopLockWatch();
+    }
+    render();
+  });
+
+  // ---------- clock ----------
+  function tick() {
+    if (!leader) { loadFromStorage(); render(); return; }
+    const now = Date.now();
+    if (state.phase === 'working' && now >= state.nextAt) {
+      if (now - state.nextAt > LATE_MS) startWork(); else beginBreak();
+    } else if (state.phase === 'break' && now >= state.breakEndsAt) {
+      if (now - state.breakEndsAt > LATE_MS) { closeNote(); startWork(); } else endBreak(true);
+    }
+    render();
+  }
+
+  // ---------- drawing ----------
+  function fmt(ms) {
+    const s = Math.max(0, Math.ceil(ms / 1000));
+    return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  }
+  function setText(node, txt) { if (node.textContent !== txt) node.textContent = txt; }
+  let ovMode = '';
+  function render() {
+    const now = Date.now();
+    rollDay();
+    const rule = 'Every ' + settings.workMin + ' minutes, look at something about 6 metres away for ' +
+      settings.breakSec + ' seconds. It lets the focusing muscles in your eyes relax.';
+    let label, time, msg, frac, main, title;
+    switch (state.phase) {
+      case 'working': {
+        const r = state.nextAt - now;
+        label = 'Next eye break in'; time = fmt(r); frac = state.total ? r / state.total : 1;
+        msg = 'Carry on. You’ll get a soft chime when it’s time.'; main = 'Pause';
+        title = (r > 60000 ? Math.ceil(r / 60000) + ' min' : fmt(r)) + ' · Look Away';
+        break;
+      }
+      case 'paused':
+        label = 'Paused'; time = fmt(state.remaining); frac = state.total ? state.remaining / state.total : 1;
+        msg = 'Reminders are on hold until you resume.'; main = 'Resume'; title = 'Paused · Look Away';
+        break;
+      case 'break': {
+        const r = state.breakEndsAt - now;
+        label = 'Eye break'; time = fmt(r); frac = r / (settings.breakSec * 1000);
+        msg = 'Look into the distance…'; main = 'Pause';
+        title = '👀 Look away · ' + Math.max(0, Math.ceil(r / 1000)) + 's';
+        break;
+      }
+      case 'away':
+        label = 'Screen locked'; time = '–:––'; frac = 0;
+        msg = 'Your eyes are resting too. The timer starts fresh when you unlock.'; main = 'Start now';
+        title = 'Away · Look Away';
+        break;
+      default:
+        label = 'Ready when you are'; time = fmt(workMs()); frac = 1;
+        msg = rule; main = 'Start reminders'; title = 'Look Away';
+    }
+    setText(el.label, label); setText(el.time, time); setText(el.msg, msg); setText(el.main, main);
+    if (document.title !== title) document.title = title;
+    el.prog.style.strokeDashoffset = String(RING * (1 - Math.min(1, Math.max(0, frac))));
+    setText(el.count, state.count ? state.count + ' eye break' + (state.count === 1 ? '' : 's') + ' taken today' : '');
+    setFavicon(state.phase === 'break' ? WARM : CALM);
+
+    const active = ['working', 'break', 'paused'].includes(state.phase);
+    el.soundBanner.hidden = !(leader && settings.sound && active && (!ctx || ctx.state !== 'running'));
+
+    // notifications status
+    let ntxt, warn = false, nbtn = false;
+    if (!canNotify()) { ntxt = 'Not available here. The chime and tab title still work.'; warn = true; }
+    else if (Notification.permission === 'granted') ntxt = 'On';
+    else if (Notification.permission === 'denied') { ntxt = 'Blocked. The chime and tab title still work.'; warn = true; }
+    else { ntxt = 'Not turned on yet'; nbtn = true; }
+    setText(el.notifState, ntxt);
+    el.notifState.classList.toggle('warn', warn);
+    el.notifBtn.hidden = !nbtn;
+
+    // break overlay
+    const mode = state.phase === 'break' ? 'break' : (showingDone ? 'done' : '');
+    if (mode !== ovMode) {
+      ovMode = mode;
+      el.overlay.hidden = !mode;
+      if (mode === 'break') {
+        el.ovTitle.textContent = 'Look away';
+        el.ovMsg.textContent = 'Find something at least 6 metres (20 feet) away and let your eyes rest on it. Blink slowly.';
+        el.ovCount.hidden = false; el.ovActions.hidden = false;
+        if (!document.hidden) el.overlay.focus({ preventScroll: true });
+      } else if (mode === 'done') {
+        el.ovTitle.textContent = 'Nice one';
+        el.ovMsg.textContent = 'Next break in ' + settings.workMin + ' minutes.';
+        el.ovCount.hidden = true; el.ovActions.hidden = true;
+      }
+    }
+    if (mode === 'break') setText(el.ovCount, String(Math.max(0, Math.ceil((state.breakEndsAt - now) / 1000))));
+  }
+
+  function syncControls() {
+    const set = (node, prop, v) => { if (node[prop] !== v) node[prop] = v; };
+    set(el.workMin, 'value', String(settings.workMin));
+    set(el.breakSec, 'value', String(settings.breakSec));
+    set(el.sound, 'checked', !!settings.sound);
+    set(el.volume, 'value', String(settings.volume));
+    el.volume.disabled = !settings.sound;
+    set(el.lockReset, 'checked', !!settings.lockReset);
+  }
+
+  // ---------- controls ----------
+  el.main.addEventListener('click', () => {
+    if (state.phase === 'working') { pause(); return; }
+    askNotify();
+    if (state.phase === 'paused') resume(); else startWork();
+  });
+  el.breakNow.addEventListener('click', () => { askNotify(); beginBreak(); });
+  el.snooze.addEventListener('click', snooze);
+  el.skip.addEventListener('click', () => endBreak(false));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && state.phase === 'break') endBreak(false); });
+  el.notifBtn.addEventListener('click', askNotify);
+  el.testSound.addEventListener('click', testChime);
+
+  el.workMin.addEventListener('change', () => {
+    settings.workMin = Number(el.workMin.value);
+    if (state.phase === 'working') startWork();
+    else if (state.phase === 'paused') { state.remaining = state.total = workMs(); }
+    save(); render();
+  });
+  el.breakSec.addEventListener('change', () => { settings.breakSec = Number(el.breakSec.value); save(); render(); });
+  el.sound.addEventListener('change', () => {
+    settings.sound = el.sound.checked; save(); syncControls();
+    if (settings.sound) testChime();
+    render();
+  });
+  el.volume.addEventListener('change', () => { settings.volume = Number(el.volume.value); save(); testChime(); });
+
+  el.lockReset.addEventListener('change', async () => {
+    const msg = (t) => { el.lockNote.textContent = t; };
+    if (!el.lockReset.checked) {
+      settings.lockReset = false; stopLockWatch(); save();
+      if (state.phase === 'away') startWork();
+      msg(''); return;
+    }
+    if (!('IdleDetector' in window)) {
+      el.lockReset.checked = false;
+      msg('Edge on this computer doesn’t allow this one. No problem, everything else still works.');
+      return;
+    }
+    let p = 'denied';
+    try { p = await IdleDetector.requestPermission(); } catch (e) {}
+    if (p !== 'granted' || (leader && !(await startLockWatch()))) {
+      el.lockReset.checked = false; settings.lockReset = false; save();
+      msg('Permission wasn’t given, so this stays off. Everything else still works.');
+      return;
+    }
+    settings.lockReset = true; save();
+    msg('On. Press Windows + L when you step away from your desk.');
+  });
+
+  // ---------- go ----------
+  syncControls();
+  render();
+  if (leader) becomeLeader();
+  setInterval(tick, 1000);
+  document.addEventListener('visibilitychange', tick);
+})();
+</script>
+</body>
+</html>
