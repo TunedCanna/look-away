@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-NzupV6T/LY24fPnj6BQ9SNqmyyHXvWPPyzm7loPT1mg='; style-src 'sha256-bAKDIOVeW4cP479wurD0YBUNv0Pyy2oz5AT+X1NEc2I='; img-src data:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-sfL3MQbMJPIlG3IK7zQmfqyqXH/VeEoZlgNRTsg0E5U='; style-src 'sha256-bAKDIOVeW4cP479wurD0YBUNv0Pyy2oz5AT+X1NEc2I='; img-src data:; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <title>Look Away</title>
 <meta name="description" content="A gentle 20-20-20 reminder to rest your eyes. Runs in your browser, nothing to install.">
@@ -456,6 +456,8 @@
     return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
   }
   function setText(node, txt) { if (node.textContent !== txt) node.textContent = txt; }
+  const SIREN = ['🚨 EYE BREAK 🚨', '⚠️ EYE BREAK ⚠️'];   // flashing tab title during a break
+  let sirenFrame = 0;
   let ovMode = '';
   function render() {
     const now = Date.now();
@@ -479,7 +481,7 @@
         const r = state.breakEndsAt - now;
         label = 'Eye break'; time = fmt(r); frac = r / (settings.breakSec * 1000);
         msg = 'Look into the distance…'; main = 'Pause';
-        title = '👀 Look away · ' + Math.max(0, Math.ceil(r / 1000)) + 's';
+        title = SIREN[sirenFrame % SIREN.length];
         break;
       }
       case 'ready':
@@ -603,6 +605,12 @@
   render();
   if (leader) becomeLeader();
   setInterval(tick, 1000);
+  setInterval(() => {
+    if (state.phase !== 'break') return;
+    sirenFrame++;
+    const t = SIREN[sirenFrame % SIREN.length];
+    if (document.title !== t) document.title = t;
+  }, 400);
   document.addEventListener('visibilitychange', tick);
 })();
 </script>
