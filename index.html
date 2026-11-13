@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-MRc3RLWxQ7kx7kopaJqCbt3O8GRCDOBJiLI32yxoJBE='; style-src 'sha256-bAKDIOVeW4cP479wurD0YBUNv0Pyy2oz5AT+X1NEc2I='; img-src data:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-GINGB+PbMHyeSzhQt9drLSQvouPdLza9cB1TWEUp5h4='; style-src 'sha256-bAKDIOVeW4cP479wurD0YBUNv0Pyy2oz5AT+X1NEc2I='; img-src data:; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <title>Look Away</title>
 <meta name="description" content="A gentle 20-20-20 reminder to rest your eyes. Runs in your browser, nothing to install.">
@@ -155,6 +155,13 @@
           <option value="60">1 minute</option>
         </select>
       </label>
+      <label class="field">
+        <span class="field-name">After each break</span>
+        <select id="afterBreak">
+          <option value="auto">Start the next timer by itself</option>
+          <option value="wait">Wait for me to press Start</option>
+        </select>
+      </label>
       <div class="field">
         <span class="field-name">Chime</span>
         <div class="row">
@@ -163,7 +170,7 @@
           <button type="button" id="testSound" class="btn small ghost">Test</button>
         </div>
       </div>
-      <div class="field">
+      <div class="field wide">
         <span class="field-name">Pop-up notifications</span>
         <div class="row">
           <span id="notifState" class="pill">Checking…</span>
@@ -184,7 +191,7 @@
       <ol>
         <li><strong>Give it its own window.</strong> Drag this tab out of Edge so it sits in its own window, then minimise it. Or install it: in Edge select <kbd>···</kbd> &rarr; <em>Apps</em> &rarr; <em>Install this site as an app</em>. You can then pin it to the taskbar and have it start when you sign in.</li>
         <li><strong>Stop Edge putting it to sleep.</strong> Edge <em>Settings</em> &rarr; <em>System and performance</em> &rarr; <em>Never put these sites to sleep</em> &rarr; <em>Add</em>, and paste this page's address. (The wording moves around a little between Edge versions.)</li>
-        <li><strong>Allow pop-ups.</strong> When Edge asks to show notifications, choose <em>Allow</em>. Missed it? Select the icon just left of the address, then <em>Permissions for this site</em> &rarr; <em>Notifications</em> &rarr; <em>Allow</em>. Windows <em>Do not disturb</em> hides pop-ups, but the chime and the tab title still work.</li>
+        <li><strong>Allow pop-ups.</strong> When Edge asks to show notifications, choose <em>Allow</em>. Missed it? Select the icon just left of the address, then <em>Permissions for this site</em> &rarr; <em>Notifications</em> &rarr; <em>Allow</em>. If Edge won't let you turn them on, your workplace has switched them off. That's fine: the chime and the tab title still tell you when it's time. Windows <em>Do not disturb</em> hides pop-ups too.</li>
         <li><strong>Lock your screen when you leave</strong> (<kbd>Windows</kbd> + <kbd>L</kbd>). With "Pause while my screen is locked" ticked, it won't chime at an empty desk.</li>
       </ol>
     </div>
@@ -225,7 +232,7 @@
   'use strict';
 
   const KEY = 'lookaway.v1';
-  const DEFAULTS = { workMin: 20, breakSec: 20, sound: true, volume: 0.6, lockReset: false };
+  const DEFAULTS = { workMin: 20, breakSec: 20, sound: true, volume: 0.6, lockReset: false, autoNext: true };
   const BLANK = { phase: 'stopped', nextAt: 0, total: 0, remaining: 0, breakEndsAt: 0, day: '', count: 0 };
   const LATE_MS = 10 * 60 * 1000;   // waking up this late means the PC was asleep: start fresh, no stale break
   const SNOOZE_MS = 5 * 60 * 1000;
@@ -237,7 +244,7 @@
     prog: $('prog'), time: $('time'), label: $('statusLabel'), msg: $('msg'),
     main: $('mainBtn'), breakNow: $('breakNowBtn'), count: $('count'),
     soundBanner: $('soundBanner'), followNote: $('followNote'),
-    workMin: $('workMin'), breakSec: $('breakSec'), sound: $('sound'), volume: $('volume'), testSound: $('testSound'),
+    workMin: $('workMin'), breakSec: $('breakSec'), afterBreak: $('afterBreak'), sound: $('sound'), volume: $('volume'), testSound: $('testSound'),
     notifState: $('notifState'), notifBtn: $('notifBtn'), lockReset: $('lockReset'), lockNote: $('lockNote'),
     overlay: $('overlay'), ovTitle: $('ovTitle'), ovMsg: $('ovMsg'), ovCount: $('ovCount'), ovActions: $('ovActions'),
     snooze: $('snoozeBtn'), skip: $('skipBtn'), favicon: $('favicon')
@@ -390,6 +397,10 @@
     state.phase = 'break'; state.breakEndsAt = Date.now() + settings.breakSec * 1000;
     save(); chime('start'); notify(); render();
   }
+  function afterBreak() {             // either roll straight into the next timer, or wait for Start
+    if (settings.autoNext) { startWork(); return; }
+    state.phase = 'ready'; save(); render();
+  }
   let showingDone = false, doneTimer = 0;
   function endBreak(completed) {
     closeNote();
@@ -398,7 +409,7 @@
       showingDone = true; clearTimeout(doneTimer);
       doneTimer = setTimeout(() => { showingDone = false; render(); }, 2500);
     }
-    startWork();
+    if (completed) afterBreak(); else startWork();   // Skip means "carry on now"
   }
   function snooze() { closeNote(); startWork(SNOOZE_MS); }
 
@@ -434,7 +445,7 @@
     if (state.phase === 'working' && now >= state.nextAt) {
       if (now - state.nextAt > LATE_MS) startWork(); else beginBreak();
     } else if (state.phase === 'break' && now >= state.breakEndsAt) {
-      if (now - state.breakEndsAt > LATE_MS) { closeNote(); startWork(); } else endBreak(true);
+      if (now - state.breakEndsAt > LATE_MS) { closeNote(); afterBreak(); } else endBreak(true);
     }
     render();
   }
@@ -471,6 +482,11 @@
         title = '👀 Look away · ' + Math.max(0, Math.ceil(r / 1000)) + 's';
         break;
       }
+      case 'ready':
+        label = 'Break done'; time = fmt(workMs()); frac = 1;
+        msg = 'Press Start when you’re ready for the next ' + settings.workMin + ' minutes.';
+        main = 'Start next ' + settings.workMin + ' min'; title = '✓ Break done · Look Away';
+        break;
       case 'away':
         label = 'Screen locked'; time = '–:––'; frac = 0;
         msg = 'Your eyes are resting too. The timer starts fresh when you unlock.'; main = 'Start now';
@@ -493,7 +509,7 @@
     let ntxt, warn = false, nbtn = false;
     if (!canNotify()) { ntxt = 'Not available here. The chime and tab title still work.'; warn = true; }
     else if (Notification.permission === 'granted') ntxt = 'On';
-    else if (Notification.permission === 'denied') { ntxt = 'Blocked. The chime and tab title still work.'; warn = true; }
+    else if (Notification.permission === 'denied') { ntxt = 'Switched off on this computer. The chime and tab title still work.'; warn = true; }
     else { ntxt = 'Not turned on yet'; nbtn = true; }
     setText(el.notifState, ntxt);
     el.notifState.classList.toggle('warn', warn);
@@ -511,7 +527,9 @@
         if (!document.hidden) el.overlay.focus({ preventScroll: true });
       } else if (mode === 'done') {
         el.ovTitle.textContent = 'Nice one';
-        el.ovMsg.textContent = 'Next break in ' + settings.workMin + ' minutes.';
+        el.ovMsg.textContent = settings.autoNext
+          ? 'Next break in ' + settings.workMin + ' minutes.'
+          : 'Press Start when you’re ready for the next one.';
         el.ovCount.hidden = true; el.ovActions.hidden = true;
       }
     }
@@ -522,6 +540,7 @@
     const set = (node, prop, v) => { if (node[prop] !== v) node[prop] = v; };
     set(el.workMin, 'value', String(settings.workMin));
     set(el.breakSec, 'value', String(settings.breakSec));
+    set(el.afterBreak, 'value', settings.autoNext ? 'auto' : 'wait');
     set(el.sound, 'checked', !!settings.sound);
     set(el.volume, 'value', String(settings.volume));
     el.volume.disabled = !settings.sound;
@@ -548,6 +567,7 @@
     save(); render();
   });
   el.breakSec.addEventListener('change', () => { settings.breakSec = Number(el.breakSec.value); save(); render(); });
+  el.afterBreak.addEventListener('change', () => { settings.autoNext = el.afterBreak.value === 'auto'; save(); render(); });
   el.sound.addEventListener('change', () => {
     settings.sound = el.sound.checked; save(); syncControls();
     if (settings.sound) testChime();
