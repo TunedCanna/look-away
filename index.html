@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-GINGB+PbMHyeSzhQt9drLSQvouPdLza9cB1TWEUp5h4='; style-src 'sha256-bAKDIOVeW4cP479wurD0YBUNv0Pyy2oz5AT+X1NEc2I='; img-src data:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-NzupV6T/LY24fPnj6BQ9SNqmyyHXvWPPyzm7loPT1mg='; style-src 'sha256-bAKDIOVeW4cP479wurD0YBUNv0Pyy2oz5AT+X1NEc2I='; img-src data:; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <title>Look Away</title>
 <meta name="description" content="A gentle 20-20-20 reminder to rest your eyes. Runs in your browser, nothing to install.">
@@ -232,7 +232,7 @@
   'use strict';
 
   const KEY = 'lookaway.v1';
-  const DEFAULTS = { workMin: 20, breakSec: 20, sound: true, volume: 0.6, lockReset: false, autoNext: true };
+  const DEFAULTS = { workMin: 20, breakSec: 20, sound: true, volume: 0.6, lockReset: false, autoNext: false };
   const BLANK = { phase: 'stopped', nextAt: 0, total: 0, remaining: 0, breakEndsAt: 0, day: '', count: 0 };
   const LATE_MS = 10 * 60 * 1000;   // waking up this late means the PC was asleep: start fresh, no stale break
   const SNOOZE_MS = 5 * 60 * 1000;
